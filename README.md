@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Literabit
 
-## Getting Started
+Literabit is a web-based reading comprehension platform for children aged 6–12, parents, and administrators. This repository contains the **Milestone 0 Engineering Foundation**: Next.js 16 App Router, Bun runtime & package manager, PostgreSQL + Drizzle ORM schema and migration tooling, strict TypeScript/lint/format quality gates, local Docker infrastructure, CI workflow, and project documentation.
 
-First, run the development server:
+Product features from EPIC 01 through EPIC 06 (`docs/PRD.md`) are planned in `docs/TASK_BREAKDOWN.md` and implemented per milestone.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## Quick Onboard Guide
+
+Prerequisites: **Bun `1.4.2`**, **Docker Desktop** (with Docker Compose), and **Git**.
+
+### 1. Install dependencies
+
+```powershell
+bun install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Create the local environment file
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+Copy-Item .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Update `AUTH_SECRET` in `.env` if needed (minimum 32 characters). Local PostgreSQL uses port `5433`.
 
-## Learn More
+### 3. Start local infrastructure
 
-To learn more about Next.js, take a look at the following resources:
+```powershell
+bun run infra:up
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This starts PostgreSQL (`literabit` and `literabit_test`) and verifies the disposable test database.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. Generate & apply database migrations + seed
 
-## Deploy on Vercel
+```powershell
+bun run db:generate
+bun run db:migrate
+bun run db:seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 5. Start the development server
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```powershell
+bun run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Stack
+
+| Layer         | Technology                                                                            |
+| :------------ | :------------------------------------------------------------------------------------ |
+| Runtime & PM  | Bun `1.4.2`                                                                           |
+| Framework     | Next.js `16.4.6` (App Router, `cacheComponents`, `partialPrefetching`)                |
+| UI & Styling  | React `19.3.0`, Tailwind CSS `4.3.3`, `lucide-react`, `shadcn/ui`                     |
+| Language      | TypeScript `5.9` (strict + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`) |
+| Database      | PostgreSQL 16 + Drizzle ORM (`postgres` driver)                                       |
+| Validation    | Zod                                                                                   |
+| Auth & Crypto | `jose` (signed HTTP-only cookies) + `bcryptjs`                                        |
+| Lint & Format | `oxlint` + `oxfmt`                                                                    |
+| Testing       | `bun:test`                                                                            |
+| CI            | GitHub Actions (`quality`, `unit-and-build`, `integration`)                           |
+
+---
+
+## Repository Structure
+
+```text
+literabit-v2/
+├── .github/                 CI workflows & PR template
+├── .husky/                  Pre-commit (lint-staged) & Conventional Commit hooks
+├── docs/                    PRD, Engineering Baseline, Architecture, Coding Standard & guides
+├── infra/
+│   └── local/               Local PostgreSQL Docker Compose & test DB bootstrap
+├── src/
+│   ├── app/                 Next.js App Router pages, layouts, and route handlers
+│   ├── db/                  Drizzle client, schema (enums/tables/relations), migrations & seed
+│   ├── lib/                 Server env config, session cookies, crypto, guards & utilities
+│   └── modules/             Domain logic (auth, learning, assessment, gamification, cms)
+└── test/
+    ├── helpers/             Disposable test database guards & sanitizers
+    ├── unit/                Fast unit tests (`bun test`)
+    └── integration/         PostgreSQL integration tests (`RUN_INTEGRATION_TESTS=1`)
+```
