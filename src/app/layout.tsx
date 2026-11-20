@@ -18,7 +18,9 @@ export const metadata: Metadata = {
     "Platform pembelajaran membaca mandiri berjenjang, kuis pemahaman kognitif, dan pemantauan perkembangan anak usia 6–12 tahun.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">): React.JSX.Element {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>): React.JSX.Element {
   return (
     <html lang="id" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
