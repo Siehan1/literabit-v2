@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "arx-be": {
+      "source": "aryanibos/arx-backend",
+      "commit": "c4f892603bad3f2a230d7acbb29d314da4ac21b5",
+      "sourceType": "github",
+      "skillPath": "skills/arx-be/SKILL.md",
+      "computedHash": "2f39268df0a16a4e4b708380eacd122ca7cb7831f2c0c87f93508d65ab17a8f3"
+    }
+  }
+}
