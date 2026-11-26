@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { z } from "zod";
 import { GuardError } from "./guards";
 
 export type ApiErrorDetail = {
@@ -48,6 +49,79 @@ export function apiError(
   const errorBody: ApiErrorEnvelope["error"] =
     details !== undefined ? { code, message, details } : { code, message };
   return NextResponse.json({ success: false, error: errorBody }, { status });
+}
+
+export type ParsedJsonResult =
+  | { ok: true; data: unknown }
+  | { ok: false; response: NextResponse<ApiErrorEnvelope> };
+
+export function formatZodErrorDetails(error: z.ZodError): ApiErrorDetail[] {
+  return error.issues.map((issue) => ({
+    field: issue.path.length > 0 ? issue.path.map(String).join(".") : "body",
+    message: issue.message,
+  }));
+}
+
+export function apiValidationError(error: z.ZodError): NextResponse<ApiErrorEnvelope> {
+  return apiError(
+    400,
+    "VALIDATION_ERROR",
+    "Data yang dikirim tidak valid.",
+    formatZodErrorDetails(error),
+  );
+}
+
+const DEFAULT_MAX_JSON_BYTES = 16 * 1024;
+
+export async function parseJsonBody(
+  request: Request,
+  maxBytes: number = DEFAULT_MAX_JSON_BYTES,
+): Promise<ParsedJsonResult> {
+  const contentLengthHeader = request.headers.get("content-length");
+  if (contentLengthHeader !== null) {
+    const contentLength = Number(contentLengthHeader);
+    if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+      return {
+        ok: false,
+        response: apiError(
+          413,
+          "PAYLOAD_TOO_LARGE",
+          "Ukuran body permintaan melebihi batas yang diizinkan.",
+        ),
+      };
+    }
+  }
+
+  let rawText: string;
+  try {
+    rawText = await request.text();
+  } catch {
+    return {
+      ok: false,
+      response: apiError(400, "VALIDATION_ERROR", "Format JSON pada body permintaan tidak valid."),
+    };
+  }
+
+  if (new TextEncoder().encode(rawText).length > maxBytes) {
+    return {
+      ok: false,
+      response: apiError(
+        413,
+        "PAYLOAD_TOO_LARGE",
+        "Ukuran body permintaan melebihi batas yang diizinkan.",
+      ),
+    };
+  }
+
+  try {
+    const data: unknown = JSON.parse(rawText);
+    return { ok: true, data };
+  } catch {
+    return {
+      ok: false,
+      response: apiError(400, "VALIDATION_ERROR", "Format JSON pada body permintaan tidak valid."),
+    };
+  }
 }
 
 export function handleApiRouteError(error: unknown): NextResponse<ApiErrorEnvelope> {

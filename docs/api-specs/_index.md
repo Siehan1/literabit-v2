@@ -25,7 +25,7 @@ OK      GET  /api/v1/health
 ### Auth, Parent Gate & Family Profiles ([02-auth-and-profiles.md](02-auth-and-profiles.md))
 
 ```text
-PLANNED POST   /api/v1/auth/register
+OK      POST   /api/v1/auth/register
 PLANNED POST   /api/v1/auth/login
 PLANNED POST   /api/v1/auth/logout
 PLANNED GET    /api/v1/auth/me

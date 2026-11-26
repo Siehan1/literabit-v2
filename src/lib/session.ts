@@ -143,6 +143,26 @@ export async function setParentGateCookie(userId: string): Promise<void> {
   cookieStore.set(LITERABIT_PARENT_GATE_COOKIE, token, getCookieOptions(PARENT_GATE_TTL_SECONDS));
 }
 
+type CookieResponseTarget = {
+  cookies: {
+    set: (name: string, value: string, options: ReturnType<typeof getCookieOptions>) => unknown;
+  };
+};
+
+export async function attachSessionCookie(
+  response: CookieResponseTarget,
+  payload: SessionPayload,
+): Promise<void> {
+  const token = await signSessionToken(payload);
+  response.cookies.set(LITERABIT_SESSION_COOKIE, token, getCookieOptions(SESSION_TTL_SECONDS));
+}
+
+export function clearSecondaryAuthCookies(response: CookieResponseTarget): void {
+  const expiredOptions = getCookieOptions(0);
+  response.cookies.set(LITERABIT_STUDENT_COOKIE, "", expiredOptions);
+  response.cookies.set(LITERABIT_PARENT_GATE_COOKIE, "", expiredOptions);
+}
+
 export async function clearAllAuthCookies(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(LITERABIT_SESSION_COOKIE);
