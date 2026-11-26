@@ -64,3 +64,13 @@ Desktop.ini
 
 # Keep Drizzle migrations and shared docs tracked:
 # src/db/migrations/
+
+# Local AI agent tool installations
+.agents/skills/impeccable/
+.claude/skills/impeccable/
+.claude/skills/code-review-skill
+skills/code-review-skill
+.codex/
+.github/agents/
+.github/hooks/
+.github/skills/

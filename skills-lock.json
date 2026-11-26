@@ -7,6 +7,13 @@
       "sourceType": "github",
       "skillPath": "skills/arx-be/SKILL.md",
       "computedHash": "2f39268df0a16a4e4b708380eacd122ca7cb7831f2c0c87f93508d65ab17a8f3"
+    },
+    "code-review-skill": {
+      "source": "awesome-skills/code-review-skill",
+      "commit": "4850184dfd7765ea7b3c5c4e9b6cf8e0815ee7cb",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "f2725b0f6247a5cfc876198c64c9b14a06edc733f57d1007cbfe37c6bcca5d93"
     }
   }
 }

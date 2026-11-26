@@ -44,6 +44,12 @@
     "node_modules",
     "dist",
     "coverage",
+    ".agents/**",
+    ".claude/**",
+    ".codex/**",
+    ".github/agents/**",
+    ".github/hooks/**",
+    ".github/skills/**",
     "src/db/migrations/**",
     "next-env.d.ts",
     "bun.lock"
