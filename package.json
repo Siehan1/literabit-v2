@@ -69,11 +69,11 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,mts}": [
-      "oxfmt",
+      "oxfmt --no-error-on-unmatched-pattern",
       "oxlint --fix"
     ],
     "*.{json,md,css,html,yaml,yml,toml}": [
-      "oxfmt"
+      "oxfmt --no-error-on-unmatched-pattern"
     ]
   }
 }
