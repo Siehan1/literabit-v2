@@ -26,9 +26,9 @@ OK      GET  /api/v1/health
 
 ```text
 OK      POST   /api/v1/auth/register
-PLANNED POST   /api/v1/auth/login
-PLANNED POST   /api/v1/auth/logout
-PLANNED GET    /api/v1/auth/me
+OK      POST   /api/v1/auth/login
+OK      POST   /api/v1/auth/logout
+OK      GET    /api/v1/auth/me
 PLANNED POST   /api/v1/auth/parent-gate/verify
 PLANNED GET    /api/v1/profiles
 PLANNED POST   /api/v1/profiles/select

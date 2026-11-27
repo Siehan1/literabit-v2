@@ -13,6 +13,8 @@ import type { AuthErrorCode } from "@/modules/auth/service";
 
 const AUTH_ERROR_STATUS: Record<AuthErrorCode, number> = {
   CONFLICT: 409,
+  INVALID_CREDENTIALS: 401,
+  UNAUTHORIZED: 401,
 };
 
 const REGISTER_RATE_LIMITER = createRateLimiter({

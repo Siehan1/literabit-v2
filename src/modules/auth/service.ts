@@ -1,11 +1,21 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { getDb, users } from "@/db";
+import { getDb, students, users } from "@/db";
 import type { LiterabitSchema } from "@/db";
-import { hashSecret } from "@/lib/crypto";
-import type { RegisteredParentUser, RegisterParentInput } from "./schemas";
+import { hashSecret, verifySecret } from "@/lib/crypto";
+import type { ParentGatePayload, SessionPayload, StudentSessionPayload } from "@/lib/session";
+import type {
+  ActiveStudentDto,
+  AuthMeResult,
+  AuthUserRole,
+  LoginInput,
+  LoginRedirectPath,
+  LoginResult,
+  RegisteredParentUser,
+  RegisterParentInput,
+} from "./schemas";
 
-export type AuthErrorCode = "CONFLICT";
+export type AuthErrorCode = "CONFLICT" | "INVALID_CREDENTIALS" | "UNAUTHORIZED";
 
 export type AuthErrorDetail = {
   field: string;
@@ -33,6 +43,8 @@ export type RegisterParentOptions = {
 
 const USERS_EMAIL_UNIQUE_INDEX = "users_email_uidx";
 const EMAIL_CONFLICT_MESSAGE = "Email sudah terdaftar.";
+// Equalizes bcrypt timing when a login email does not match any user row.
+const UNKNOWN_USER_PASSWORD_HASH = "$2b$10$fA7qN8xP2mK4vR9wT1yU3eL6jH0cB5dG8kM2pQ4sV7xZ9aC1eF3hK";
 
 function createEmailConflictError(): AuthError {
   return new AuthError("CONFLICT", EMAIL_CONFLICT_MESSAGE, [
@@ -116,4 +128,104 @@ export async function registerParent(
     }
     throw error;
   }
+}
+
+export function getLoginRedirectPath(role: AuthUserRole): LoginRedirectPath {
+  return role === "ADMIN" ? "/admin" : "/profiles";
+}
+
+export async function authenticateUser(
+  input: LoginInput,
+  db: AuthDatabase = getDb(),
+): Promise<LoginResult> {
+  const normalizedEmail = input.email.trim().toLowerCase();
+
+  const rows = await db
+    .select({
+      id: users.id,
+      fullName: users.fullName,
+      email: users.email,
+      role: users.role,
+      passwordHash: users.passwordHash,
+    })
+    .from(users)
+    .where(eq(users.email, normalizedEmail))
+    .limit(1);
+
+  const user = rows[0];
+  const candidateHash = user?.passwordHash ?? UNKNOWN_USER_PASSWORD_HASH;
+  const isPasswordValid = await verifySecret(input.password, candidateHash);
+
+  if (user === undefined || !isPasswordValid) {
+    throw new AuthError("INVALID_CREDENTIALS", "Email atau kata sandi salah.");
+  }
+
+  return {
+    user: {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+    },
+    redirectTo: getLoginRedirectPath(user.role),
+  };
+}
+
+export type AuthSessionContextInput = {
+  session: SessionPayload;
+  studentCookie: StudentSessionPayload | null;
+  parentGate: ParentGatePayload | null;
+};
+
+export async function getAuthSessionContext(
+  input: AuthSessionContextInput,
+  db: AuthDatabase = getDb(),
+): Promise<AuthMeResult> {
+  const userRows = await db
+    .select({
+      id: users.id,
+      fullName: users.fullName,
+      email: users.email,
+      role: users.role,
+    })
+    .from(users)
+    .where(eq(users.id, input.session.userId))
+    .limit(1);
+
+  const user = userRows[0];
+  if (user === undefined || user.role !== input.session.role) {
+    throw new AuthError("UNAUTHORIZED", "Sesi tidak valid. Silakan masuk kembali.");
+  }
+
+  const parentGateVerified =
+    user.role === "PARENT" && input.parentGate !== null && input.parentGate.userId === user.id;
+
+  let activeStudent: ActiveStudentDto | null = null;
+
+  if (
+    user.role === "PARENT" &&
+    input.studentCookie !== null &&
+    input.studentCookie.parentId === user.id
+  ) {
+    const studentRows = await db
+      .select({
+        id: students.id,
+        displayName: students.displayName,
+        avatar: students.avatar,
+        recommendedLevel: students.recommendedLevel,
+        totalXp: students.totalXp,
+        level: students.level,
+      })
+      .from(students)
+      .where(and(eq(students.id, input.studentCookie.studentId), eq(students.parentId, user.id)))
+      .limit(1);
+
+    activeStudent = studentRows[0] ?? null;
+  }
+
+  return {
+    user,
+    activeStudent,
+    parentGateVerified,
+  };
 }

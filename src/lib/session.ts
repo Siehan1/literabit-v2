@@ -49,6 +49,13 @@ export function getCookieOptions(maxAgeSeconds: number): {
   };
 }
 
+function getExpiredCookieOptions(): ReturnType<typeof getCookieOptions> & { expires: Date } {
+  return {
+    ...getCookieOptions(0),
+    expires: new Date(0),
+  };
+}
+
 async function signPayload(
   payload: Record<string, unknown>,
   maxAgeSeconds: number,
@@ -145,7 +152,11 @@ export async function setParentGateCookie(userId: string): Promise<void> {
 
 type CookieResponseTarget = {
   cookies: {
-    set: (name: string, value: string, options: ReturnType<typeof getCookieOptions>) => unknown;
+    set: (
+      name: string,
+      value: string,
+      options: ReturnType<typeof getCookieOptions> & { expires?: Date },
+    ) => unknown;
   };
 };
 
@@ -158,14 +169,15 @@ export async function attachSessionCookie(
 }
 
 export function clearSecondaryAuthCookies(response: CookieResponseTarget): void {
-  const expiredOptions = getCookieOptions(0);
+  const expiredOptions = getExpiredCookieOptions();
   response.cookies.set(LITERABIT_STUDENT_COOKIE, "", expiredOptions);
   response.cookies.set(LITERABIT_PARENT_GATE_COOKIE, "", expiredOptions);
 }
 
 export async function clearAllAuthCookies(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(LITERABIT_SESSION_COOKIE);
-  cookieStore.delete(LITERABIT_STUDENT_COOKIE);
-  cookieStore.delete(LITERABIT_PARENT_GATE_COOKIE);
+  const expiredOptions = getExpiredCookieOptions();
+  cookieStore.set(LITERABIT_SESSION_COOKIE, "", expiredOptions);
+  cookieStore.set(LITERABIT_STUDENT_COOKIE, "", expiredOptions);
+  cookieStore.set(LITERABIT_PARENT_GATE_COOKIE, "", expiredOptions);
 }
